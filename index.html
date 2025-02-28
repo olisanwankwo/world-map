@@ -26,18 +26,25 @@
       background-color: white;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
-      overflow: hidden;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
-    th,
-    td {
-      padding: 15px;
+    th, td {
+      padding: 12px;
       text-align: left;
       border-bottom: 1px solid #ddd;
     }
@@ -51,39 +58,39 @@
       background-color: #f5f5f5;
     }
 
-    .action-btn {
+    .action-btn, .map-btn {
       display: inline-block;
-      padding: 10px;
+      padding: 8px 12px;
       background-color: #333;
       color: white;
       text-decoration: none;
       border-radius: 5px;
+      font-size: 14px;
+      text-align: center;
+      margin: 2px;
     }
 
-    .map-btn {
-      display: inline-block;
-      padding: 10px;
-      background-color: #333;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
+    .table-responsive {
+      overflow-x: auto;
     }
 
-    .search-bar {
-      width: 100%;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    @media screen and (max-width: 600px) {
-      th,
-      td {
-        padding: 10px;
+    @media screen and (max-width: 768px) {
+      .container {
+        width: 90%;
+        padding: 15px;
       }
 
-      .container {
-        border-radius: 0;
+      .search-bar {
+        font-size: 14px;
+      }
+
+      table {
+        font-size: 14px;
+      }
+
+      .action-btn, .map-btn {
+        font-size: 12px;
+        padding: 6px 10px;
       }
     }
   </style>
@@ -92,33 +99,40 @@
 <body>
   <header>
     <h1>Country Dashboard</h1>
+    <p id="countryCount"></p>
   </header>
 
   <div class="container">
     <input type="text" id="searchBar" class="search-bar" placeholder="Search for a country">
-
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>ISO3</th>
-          <th>ISO2</th>
-          <th>Region</th>
-          <th>Subregion</th>
-          <th>State</th>
-          <th>Map</th>
-        </tr>
-      </thead>
-      <tbody id="countryTableBody"></tbody>
-    </table>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>ISO3</th>
+            <th>ISO2</th>
+            <th>Region</th>
+            <th>Subregion</th>
+            <th>State</th>
+            <th>Map</th>
+          </tr>
+        </thead>
+        <tbody id="countryTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
     async function fetchJsonData() {
-      const response = await fetch('https://osiecsgyzalpjwwsarln.supabase.co/storage/v1/object/public/assets/countries+states+cities.json?t=2024-01-19T09%3A47%3A10.874Z');
-      const jsonData = await response.json();
-      return jsonData;
+      try {
+        const response = await fetch('countries+states+cities.json');
+        const jsonData = await response.json();
+        return jsonData;
+      } catch (error) {
+        console.error('Error fetching JSON data:', error);
+        return [];
+      }
     }
 
     function openGoogleMaps(countryName) {
@@ -127,19 +141,17 @@
     }
 
     function filterCountries(searchTerm, jsonData) {
-      const filteredCountries = jsonData.filter(country =>
-        country.name.toLowerCase().startsWith(searchTerm.toLowerCase())
-      );
-      return filteredCountries;
+      return jsonData.filter(country => country.name.toLowerCase().startsWith(searchTerm.toLowerCase()));
     }
 
     function populateTable(data) {
       const countryTableBody = document.getElementById('countryTableBody');
       countryTableBody.innerHTML = '';
+      let counter = 1;
 
       data.forEach(country => {
         const row = countryTableBody.insertRow();
-        row.insertCell(0).textContent = country.id;
+        row.insertCell(0).textContent = counter++;
         row.insertCell(1).textContent = country.name;
         row.insertCell(2).textContent = country.iso3;
         row.insertCell(3).textContent = country.iso2;
@@ -154,12 +166,15 @@
         actionCell.appendChild(actionButton);
 
         const openMapCell = row.insertCell(7);
-        const openMapButton = document.createElement('div');
+        const openMapButton = document.createElement('a');
         openMapButton.classList.add('map-btn');
         openMapButton.textContent = 'View Map';
-        openMapButton.addEventListener('click', () => openGoogleMaps(country.name));
+        openMapButton.href = `https://www.google.com/maps?q=${encodeURIComponent(country.name)}`;
+        openMapButton.target = '_blank';
         openMapCell.appendChild(openMapButton);
       });
+
+      document.getElementById('countryCount').textContent = `Number of countries: ${data.length}`;
     }
 
     async function populateCountryTable() {
@@ -175,11 +190,8 @@
       populateTable(jsonData);
     }
 
-    window.onload = function () {
-      populateCountryTable();
-    };
+    window.onload = populateCountryTable;
   </script>
 </body>
 
 </html>
-
